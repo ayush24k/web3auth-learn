@@ -1,101 +1,250 @@
-import Image from "next/image";
+'use client'
 
+import { CHAIN_NAMESPACES, IAdapter, IProvider, IWeb3AuthCoreOptions, UX_MODE, WALLET_ADAPTERS, WEB3AUTH_NETWORK } from "@web3auth/base";
+import { EthereumPrivateKeyProvider } from "@web3auth/ethereum-provider";
+import { Web3AuthNoModal } from "@web3auth/no-modal";
+import { AuthAdapter } from "@web3auth/auth-adapter";
+import { useEffect, useState } from "react";
+import { WalletConnectV2Adapter, getWalletConnectV2Settings } from "@web3auth/wallet-connect-v2-adapter";
+import { WalletConnectModal } from "@walletconnect/modal";
+import { WalletServicesPlugin } from "@web3auth/wallet-services-plugin";
+import { getInjectedAdapters } from "@web3auth/default-evm-adapter";
+
+import RPC from "./etherRPC";
+
+// const clientId = "BPi5PB_UiIZ-cPz1GtV5i1I2iOSOHuimiXBI0e-Oe_u6X3oVAbCiAZOTEBtTXw4tsluTITPqA8zMsfxIKMjiqNQ"
+const clientId = "BCP4LesPQ1f-L3igfyo9vrojfZOCkDBCnzDbNfAgZSdFGHFsOyxOiAiClD51cZdGKIBzeAh6s9FVSKO7pp9QfQc"
+
+const chainConfig = {
+  chainNamespace: CHAIN_NAMESPACES.EIP155,
+  chainId: "0x1",
+  rpcTarget: "https://rpc.ankr.com/eth",
+  // Avoid using public rpcTarget in production.
+  // Use services like Infura, Quicknode etc
+  displayName: "Ethereum Mainnet",
+  blockExplorerUrl: "https://etherscan.io",
+  ticker: "ETH",
+  tickerName: "Ethereum",
+  logo: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
+};
+
+
+let injectedAdapters: any;
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [web3auth, setWeb3Auth] = useState<Web3AuthNoModal | null>(null);
+  const [provider, setProvider] = useState<IProvider | null>(null)
+  const [loggedIn, setLoggedin] = useState(false)
+  const [walletServicesPlugin, setWalletServicesPlugin] = useState<WalletServicesPlugin | null>(null);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+  // useEffect(() => {
+  //   const init = async () => {
+  //     try {
+  //       // adding wallet connect v2 adapter
+  //       const web3authNoModalOptions: IWeb3AuthCoreOptions = {
+  //         clientId,
+  //         web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET,
+  //         privateKeyProvider,
+  //       };
+
+  //       const defaultWcSettings = await getWalletConnectV2Settings(CHAIN_NAMESPACES.EIP155, ["0x1", "0xaa36a7"], "04309ed1007e77d1f119b85205bb779d");
+  //       const walletConnectModal = new WalletConnectModal({ projectId: "04309ed1007e77d1f119b85205bb779d" });
+  //       const walletConnectV2Adapter = new WalletConnectV2Adapter({
+  //         adapterSettings: {
+  //           qrcodeModal: walletConnectModal,
+  //           ...defaultWcSettings.adapterSettings,
+  //         },
+  //         loginSettings: { ...defaultWcSettings.loginSettings },
+  //       });
+  //       web3auth.configureAdapter(walletConnectV2Adapter);
+
+  //       injectedAdapters = await getInjectedAdapters({ options: web3authNoModalOptions });
+  //       injectedAdapters.forEach((adapter: IAdapter<unknown>) => {
+  //         web3auth.configureAdapter(adapter);
+  //       });
+
+  //       const walletServicesPluginInstance = new WalletServicesPlugin({
+  //         wsEmbedOpts: {},
+  //         walletInitOptions: { whiteLabel: { showWidgetButton: true } },
+  //       });
+
+  //       setWalletServicesPlugin(walletServicesPluginInstance);
+  //       web3auth.addPlugin(walletServicesPluginInstance);
+
+  //       // IMP END - SDK Initialization
+  //       // IMP START - SDK Initialization
+  //       await web3auth.init();
+  //       setProvider(web3auth.provider);
+  //       if (web3auth.connected) {
+  //         setLoggedin(true);
+  //       }
+  //     } catch (error) {
+  //       console.error(error);
+  //     }
+  //   };
+
+  //   init();
+  // }, []);
+
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const privateKeyProvider = new EthereumPrivateKeyProvider({ config: { chainConfig } });
+        const web3authNoModalOptions: IWeb3AuthCoreOptions = {
+          clientId,
+          web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET,
+          privateKeyProvider,
+        };
+        const web3auth = new Web3AuthNoModal(web3authNoModalOptions);
+
+        const authAdapter = new AuthAdapter();
+        web3auth.configureAdapter(authAdapter);
+
+        // adding wallet connect v2 adapter
+        const defaultWcSettings = await getWalletConnectV2Settings(CHAIN_NAMESPACES.EIP155, ["0x1", "0xaa36a7"], "04309ed1007e77d1f119b85205bb779d");
+        const walletConnectModal = new WalletConnectModal({ projectId: "04309ed1007e77d1f119b85205bb779d" });
+        const walletConnectV2Adapter = new WalletConnectV2Adapter({
+          adapterSettings: {
+            qrcodeModal: walletConnectModal,
+            ...defaultWcSettings.adapterSettings,
+          },
+          loginSettings: { ...defaultWcSettings.loginSettings },
+        });
+        web3auth.configureAdapter(walletConnectV2Adapter);
+
+        injectedAdapters = getInjectedAdapters({ options: web3authNoModalOptions });
+        injectedAdapters.forEach((adapter: IAdapter<unknown>) => {
+          web3auth.configureAdapter(adapter);
+        });
+
+        const walletServicesPluginInstance = new WalletServicesPlugin({
+          wsEmbedOpts: {},
+          walletInitOptions: { whiteLabel: { showWidgetButton: true } },
+        });
+
+        setWalletServicesPlugin(walletServicesPluginInstance);
+        web3auth.addPlugin(walletServicesPluginInstance);
+
+        setWeb3Auth(web3auth);
+        await web3auth.init();
+        setProvider(web3auth.provider);
+        if (web3auth.connected) {
+          setLoggedin(true);
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    init();
+  }, []);
+
+  const logIn = async () => {
+    var web3authProvider = null;
+    web3authProvider = await web3auth.connectTo(WALLET_ADAPTERS.AUTH, {
+      loginProvider: "google",
+    });
+    console.log(web3authProvider);
+    setProvider(web3authProvider);
+    if (web3auth.connected) {
+      setLoggedin(true)
+    }
+  }
+
+  const logout = async () => {
+    await web3auth.logout();
+    setProvider(null);
+    setLoggedin(false);
+  };
+
+  const getUserInfo = async () => {
+    // IMP START - Get User Information
+    const user = await web3auth.getUserInfo();
+    // IMP END - Get User Information
+    uiConsole(user);
+  };
+
+
+  // log in wallet
+  const loginWithInjected = async (adapterName: string) => {
+    if (!web3auth) {
+      uiConsole("web3auth not initialized yet");
+      return;
+    }
+    const web3authProvider = await web3auth.connectTo(adapterName);
+    setProvider(web3authProvider);
+    if (web3auth.connected) {
+      setLoggedin(true);
+    }
+  };
+
+  const getAccounts = async () => {
+    if (!provider) {
+      uiConsole("provider not initialized yet");
+      return;
+    }
+    const address = await RPC.getAccounts(provider);
+    uiConsole(address);
+  };
+
+  const loginWCModal = async () => {
+    if (!web3auth) {
+      uiConsole("web3auth not initialized yet");
+      return;
+    }
+    const web3authProvider = await web3auth.connectTo(WALLET_ADAPTERS.WALLET_CONNECT_V2);
+    setProvider(web3authProvider);
+    if (web3auth.connected) {
+      setLoggedin(true);
+    }
+  }
+
+  function uiConsole(...args: any[]): void {
+    const el = document.querySelector("#console>p");
+    if (el) {
+      el.innerHTML = JSON.stringify(args || {}, null, 2);
+      console.log(...args);
+    }
+  }
+
+  return (
+    <div>
+      <button onClick={logIn}>
+        {
+          loggedIn ? "logged in" : "not logged in"
+        }
+      </button>
+      <button onClick={logout}>logout</button>
+
+      <br></br>
+
+      <button onClick={getUserInfo}>
+        Get USer Info
+      </button>
+
+      <button onClick={getAccounts}>
+        Get Account
+      </button>
+
+      <br></br>
+
+      <div className="bg-red-200">
+        {injectedAdapters?.map((adapter: IAdapter<unknown>) => (
+          <button key={adapter.name.toUpperCase()} onClick={() => loginWithInjected(adapter.name)} className="card">
+            Login with {adapter.name.charAt(0).toUpperCase() + adapter.name.slice(1)} Wallet
+          </button>
+        ))}
+      </div>
+
+
+      <br></br>
+      <button onClick={loginWCModal} className="card">
+        Login with Wallet Connect v2
+      </button>
+
+      
+      <div id="console" style={{ whiteSpace: "pre-line" }}>
+        <p style={{ whiteSpace: "pre-line" }}></p>
+      </div>
     </div>
   );
 }
