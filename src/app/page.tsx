@@ -9,6 +9,9 @@ import { WalletConnectV2Adapter, getWalletConnectV2Settings } from "@web3auth/wa
 import { WalletConnectModal } from "@walletconnect/modal";
 import { WalletServicesPlugin } from "@web3auth/wallet-services-plugin";
 import { getInjectedAdapters } from "@web3auth/default-evm-adapter";
+import { ethers } from "ethers";
+
+import testAbi from "@/contracts/abi.json";
 
 import RPC from "./etherRPC";
 
@@ -198,6 +201,23 @@ export default function Home() {
     }
   }
 
+  const abiIntraction = async () => {
+    if (!provider) {
+      uiConsole("provider not initialized yet");
+      return;
+    }
+
+    const abiAddress = "0x46f2392F70FaDc9cA077aa8cd13346a4E639E388";
+    const ethersProvider = new ethers.BrowserProvider(provider);
+    const signer = await ethersProvider.getSigner();
+
+    const abi = new ethers.Contract(abiAddress, testAbi, signer);
+
+    const abiData = await abi.retrieve();
+
+    uiConsole(abiData);
+  }
+
   function uiConsole(...args: any[]): void {
     const el = document.querySelector("#console>p");
     if (el) {
@@ -239,6 +259,12 @@ export default function Home() {
       <br></br>
       <button onClick={loginWCModal} className="card">
         Login with Wallet Connect v2
+      </button>
+
+
+      <br></br>
+      <button onClick={abiIntraction} className="card">
+        Abi Interaction
       </button>
 
       
