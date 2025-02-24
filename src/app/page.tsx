@@ -207,12 +207,12 @@ export default function Home() {
       return;
     }
 
-    const abiAddress = "0x46f2392F70FaDc9cA077aa8cd13346a4E639E388";
+    const abiAddress = "0x6fEc7d4fa00963D14605c109a07c0E5961B42646";
     const ethersProvider = new ethers.BrowserProvider(provider);
     const signer = await ethersProvider.getSigner();
+    const address = signer.getAddress();
 
     const abi = new ethers.Contract(abiAddress, testAbi, signer);
-
     const abiData = await abi.retrieve();
 
     uiConsole(abiData);
