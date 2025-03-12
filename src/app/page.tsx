@@ -119,13 +119,6 @@ export default function Home() {
           web3auth.configureAdapter(adapter);
         });
 
-        const walletServicesPluginInstance = new WalletServicesPlugin({
-          wsEmbedOpts: {},
-          walletInitOptions: { whiteLabel: { showWidgetButton: true } },
-        });
-
-        setWalletServicesPlugin(walletServicesPluginInstance);
-        web3auth.addPlugin(walletServicesPluginInstance);
 
         setWeb3Auth(web3auth);
         await web3auth.init();
@@ -218,6 +211,64 @@ export default function Home() {
     uiConsole(abiData);
   }
 
+  //normal sign message
+  const signMessage = async () => {
+    if (!provider) {
+      uiConsole("provider not initialized yet");
+      return;
+    }
+    const etherProvider = new ethers.BrowserProvider(provider);
+    const signer = await etherProvider.getSigner();
+    const originalMessage = "hello bhai ji";
+
+const signedMessage = await signer.signMessage(originalMessage);
+  }
+
+  // sign typed data v4
+  const signMessagev4 = async () => {
+    if (!provider) {
+      uiConsole("provider not initialized yet");
+      return;
+    }
+    const etherProvider = new ethers.BrowserProvider(provider);
+    const signer = await etherProvider.getSigner();
+    const fromAddress = await signer.getAddress();
+
+    const originalMessage = JSON.stringify({
+      domain: {
+        name: "Sign Typed Data V4",
+        version: "1.0",
+        chainId: 97,
+        verifyingContract: "0x981A8031c11132B9D5B4b4f72Dc74799F13F4F2a",
+      },
+
+      message: {
+        tokenId: 3,
+        tokenURI: "https://ipfs.filebase.io/ipfs/bafybeigik2ght3wnfe2u565xbtbszyxwmlfeaf62kxbaaex5ocp33po7gq"
+      },
+
+      primaryType: "BuyerVoucher",
+      types: {
+        EIP712Domain: [
+          { name: "name", type: "string" },
+          { name: "version", type: "string" },
+          { name: "chainId", type: "uint256" },
+          { name: "verifyingContract", type: "address" },
+        ],
+
+        BuyerVoucher: [
+          { name: "tokenId", type: "uint256" },
+          { name: "tokenURI", type: "string" },
+        ],
+      }
+    })
+
+    const params = [fromAddress, originalMessage];
+    const method = "eth_signTypedData_v4";
+
+    const signedMessage = await signer.provider.send(method, params);
+  }
+
   function uiConsole(...args: any[]): void {
     const el = document.querySelector("#console>p");
     if (el) {
@@ -267,9 +318,16 @@ export default function Home() {
         Abi Interaction
       </button>
 
-      
+
       <div id="console" style={{ whiteSpace: "pre-line" }}>
         <p style={{ whiteSpace: "pre-line" }}></p>
+      </div>
+
+      <div className="h-screen flex justify-center items-center">
+        <div className="bg-red-300 flex flex-col gap-5">
+          <button onClick={signMessage}>sign message nomral</button>
+          <button onClick={signMessagev4}>Sign Typed data v4</button>
+        </div>
       </div>
     </div>
   );
