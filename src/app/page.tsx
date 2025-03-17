@@ -11,7 +11,8 @@ import { WalletServicesPlugin } from "@web3auth/wallet-services-plugin";
 import { getInjectedAdapters } from "@web3auth/default-evm-adapter";
 import { ethers } from "ethers";
 
-import testAbi from "@/contracts/abi.json";
+// import testAbi from "@/contracts/abi.json";
+import testAbi from "@/contracts/abinew.json";
 
 import RPC from "./etherRPC";
 
@@ -200,13 +201,14 @@ export default function Home() {
       return;
     }
 
-    const abiAddress = "0x6fEc7d4fa00963D14605c109a07c0E5961B42646";
+    // const abiAddress = "0x6fEc7d4fa00963D14605c109a07c0E5961B42646";
+    const abiAddress = "0x53686d2cCDF929f5401717a43a5dc89176145B02";
     const ethersProvider = new ethers.BrowserProvider(provider);
     const signer = await ethersProvider.getSigner();
     const address = signer.getAddress();
 
     const abi = new ethers.Contract(abiAddress, testAbi, signer);
-    const abiData = await abi.retrieve();
+    const abiData = await abi.approve("0x34aC1D4FA2CFF01E82E8639115b421b5cbb194E6", 0);
 
     uiConsole(abiData);
   }
@@ -243,8 +245,8 @@ const signedMessage = await signer.signMessage(originalMessage);
       },
 
       message: {
-        tokenId: 3,
-        tokenURI: "https://ipfs.filebase.io/ipfs/bafybeigik2ght3wnfe2u565xbtbszyxwmlfeaf62kxbaaex5ocp33po7gq"
+        tokenId: 0,
+        tokenURI: "0x53686d2cCDF929f5401717a43a5dc89176145B02"
       },
 
       primaryType: "BuyerVoucher",
@@ -267,6 +269,7 @@ const signedMessage = await signer.signMessage(originalMessage);
     const method = "eth_signTypedData_v4";
 
     const signedMessage = await signer.provider.send(method, params);
+    uiConsole(signedMessage);
   }
 
   function uiConsole(...args: any[]): void {
