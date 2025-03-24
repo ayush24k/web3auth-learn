@@ -223,7 +223,7 @@ export default function Home() {
     const signer = await etherProvider.getSigner();
     const originalMessage = "hello bhai ji";
 
-const signedMessage = await signer.signMessage(originalMessage);
+    const signedMessage = await signer.signMessage(originalMessage);
   }
 
   // sign typed data v4
@@ -245,8 +245,11 @@ const signedMessage = await signer.signMessage(originalMessage);
       },
 
       message: {
+        tokenAddress: "0x53686d2cCDF929f5401717a43a5dc89176145B02",
         tokenId: 0,
-        tokenURI: "0x53686d2cCDF929f5401717a43a5dc89176145B02"
+        price: ethers.parseEther("0.1").toString(),
+        uri: "0x53686d2cCDF929f5401717a43a5dc89176145B02",
+        seller: fromAddress,
       },
 
       primaryType: "BuyerVoucher",
@@ -259,8 +262,11 @@ const signedMessage = await signer.signMessage(originalMessage);
         ],
 
         BuyerVoucher: [
+          { name: "tokenAddress", type: "address" },
           { name: "tokenId", type: "uint256" },
-          { name: "tokenURI", type: "string" },
+          { name: "price", type: "uint256" },
+          { name: "uri", type: "string" },
+          { name: "seller", type: "address" },
         ],
       }
     })
