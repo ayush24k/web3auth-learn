@@ -247,7 +247,7 @@ export default function Home() {
       message: {
         tokenAddress: "0x53686d2cCDF929f5401717a43a5dc89176145B02",
         tokenId: 0,
-        price: ethers.parseEther("0.1").toString(),
+        price: "10000000000",
         uri: "0x53686d2cCDF929f5401717a43a5dc89176145B02",
         seller: fromAddress,
       },
