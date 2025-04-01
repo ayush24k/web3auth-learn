@@ -17,6 +17,7 @@
     "@web3auth/no-modal": "^9.5.4",
     "@web3auth/wallet-connect-v2-adapter": "^9.6.0",
     "@web3auth/wallet-services-plugin": "^9.6.0",
+    "axios": "^1.8.4",
     "next": "15.1.7",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

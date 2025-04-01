@@ -73,7 +73,7 @@ const sendTransaction = async (provider: IProvider): Promise<any> => {
   }
 }
 
-const signMessage = async (provider: IProvider): Promise<any> => {
+const signMessage = async (provider: IProvider, message:string): Promise<any> => {
   try {
     // For ethers v5
     // const ethersProvider = new ethers.providers.Web3Provider(provider);
@@ -82,7 +82,7 @@ const signMessage = async (provider: IProvider): Promise<any> => {
     // For ethers v5
     // const signer = ethersProvider.getSigner();
     const signer = await ethersProvider.getSigner();
-    const originalMessage = "YOUR_MESSAGE";
+    const originalMessage = message;
 
     // Sign the message
     const signedMessage = await signer.signMessage(originalMessage);

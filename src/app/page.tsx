@@ -15,6 +15,7 @@ import { ethers } from "ethers";
 import testAbi from "@/contracts/abinew.json";
 
 import RPC from "./etherRPC";
+import axios from "axios";
 
 // const clientId = "BPi5PB_UiIZ-cPz1GtV5i1I2iOSOHuimiXBI0e-Oe_u6X3oVAbCiAZOTEBtTXw4tsluTITPqA8zMsfxIKMjiqNQ"
 const clientId = "BCP4LesPQ1f-L3igfyo9vrojfZOCkDBCnzDbNfAgZSdFGHFsOyxOiAiClD51cZdGKIBzeAh6s9FVSKO7pp9QfQc"
@@ -169,10 +170,42 @@ export default function Home() {
     }
     const web3authProvider = await web3auth.connectTo(adapterName);
     setProvider(web3authProvider);
+
     if (web3auth.connected) {
       setLoggedin(true);
     }
+
+    if (provider) {
+      await authenticate();
+    }
   };
+
+  // backend authenticate
+  async function authenticate() {
+    if (!provider) {
+      uiConsole("provider not initialized yet");
+      return;
+    }
+    const address = await RPC.getAccounts(provider);
+    const response = await axios.post("http://localhost:4000/api/user/nonce", {
+      address: address
+    })
+    const data = await response.data;
+
+    // verifying sig
+    const signature = await RPC.signMessage(provider, data.message);
+    console.log(signature);
+
+    const verifyRes = await axios.post("http://localhost:4000/api/user/verify", {
+      signature: signature,
+    }, {
+      headers: {
+        Authorization: `Bearer ${data.tempToken}`
+      }
+    })
+    const finalRes = verifyRes.data;
+    console.log(finalRes);
+  }
 
   const getAccounts = async () => {
     if (!provider) {
@@ -235,6 +268,7 @@ export default function Home() {
     const etherProvider = new ethers.BrowserProvider(provider);
     const signer = await etherProvider.getSigner();
     const fromAddress = await signer.getAddress();
+    console.log(fromAddress);
 
     const originalMessage = JSON.stringify({
       domain: {
