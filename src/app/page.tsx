@@ -192,9 +192,8 @@ export default function Home() {
     })
     const data = await response.data;
 
-    // verifying sig
+    // verifying sig stopped working
     const signature = await RPC.signMessage(provider, data.message);
-    console.log(signature);
 
     const verifyRes = await axios.post("http://localhost:4000/api/user/verify", {
       signature: signature,
